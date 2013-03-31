@@ -19,7 +19,7 @@ import System.Random
 -- instead, wrap the 'Map' in a 'ValMap'.
 --
 -- Minimal complete definition: 'index' and 'size'
-class Sample s a | s -> a where
+class (Num i, Random i) => Sample s i a | s -> i a where
 
   -- | Sample a container, using the provided RandomGem instance as the entropy
   -- source
@@ -34,23 +34,23 @@ class Sample s a | s -> a where
   -- | Retrieve the item at the specified index from the container
   --
   -- Indexing is assumed to begin at 0.
-  index :: s -> Int -> a
+  index :: s -> i -> a
 
   -- | Return the number of elements in the container
-  size :: s -> Int
+  size :: s -> i
 
-instance Sample (Set a) a where index = flip elemAt
-                                size = S.size
+instance Sample (Set a) Int a where index = flip elemAt
+                                    size = S.size
 
-instance Sample [a] a where index = (!!)
-                            size = length
+instance Sample [a] Int a where index = (!!)
+                                size = length
 
-instance Sample (Map k v) k where index = flip elemAt . keysSet
-                                  size = M.size
+instance Sample (Map k v) Int k where index = flip elemAt . keysSet
+                                      size = M.size
 
 -- | Wrapper for 'Map' for which the 'Sample' instance samples values instead of
 -- keys
 newtype ValMap k v = ValMap (Map k v)
 
-instance Sample (ValMap k v) v where index (ValMap m) = (elems m !!)
-                                     size (ValMap m) = M.size m
+instance Sample (ValMap k v) Int v where index (ValMap m) = (elems m !!)
+                                         size (ValMap m) = M.size m

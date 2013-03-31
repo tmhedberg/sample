@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances, FunctionalDependencies #-}
 
-module Sample where
+module Data.Sample where
 
 import Control.Monad.IO.Class
 

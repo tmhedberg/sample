@@ -1,11 +1,11 @@
-{-# LANGUAGE FlexibleInstances, FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances, FunctionalDependencies, ScopedTypeVariables #-}
 
 -- | Polymorphic random sampling of containers
 module Data.Sample where
 
+import Control.Applicative
 import Control.Monad.IO.Class
 
-import Data.Functor
 import Data.Map hiding (elemAt, size)
 import qualified Data.Map as M
 import Data.Set hiding (elems, size)
@@ -24,19 +24,28 @@ class (Num i, Random i) => Sample s i a | s -> i a where
   -- | Sample a container, using the provided RandomGem instance as the entropy
   -- source
   sample :: RandomGen rg => rg -> s -> (a, rg)
-  sample rg s = let (i, rg') = randomR (0, size s - 1) rg in (s `index` i, rg')
+  sample rg s = let bi = baseIndex (undefined :: s)
+                    (i, rg') = randomR (bi, bi + size s - 1) rg
+                in (s `index` i, rg')
 
   -- | Sample a container, using I/O to retrieve the system's global entropy
   -- source
   sampleIO :: MonadIO io => s -> io a
-  sampleIO s = liftIO $ (s`index`) <$> randomRIO (0, size s - 1)
+  sampleIO s = liftIO $ fmap fst $ sample <$> getStdGen <*> pure s
 
   -- | Retrieve the item at the specified index from the container
-  --
-  -- Indexing is assumed to begin at 0.
   index :: s -> i -> a
 
-  -- | Return the number of elements in the container
+  -- | The index of the first element in the container
+  --
+  -- Default: @0@
+  --
+  -- The argument is unused and may be 'undefined'; it is required for
+  -- unambiguous instance resolution.
+  baseIndex :: s -> i
+  baseIndex _ = 0
+
+  -- | Return the number of elements in the given container
   size :: s -> i
 
 instance Sample (Set a) Int a where index = flip elemAt

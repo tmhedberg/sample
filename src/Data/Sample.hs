@@ -41,7 +41,9 @@ class (Num i, Random i) => Sample s i a | s -> i a where
   -- | Sample a container, using I/O to retrieve the system's global entropy
   -- source
   sampleIO :: MonadIO io => s -> io a
-  sampleIO s = liftIO $ fmap fst $ sample <$> getStdGen <*> pure s
+  sampleIO s = liftIO $ do (a, sg') <- sample <$> getStdGen <*> pure s
+                           setStdGen sg'
+                           return a
 
   -- | Retrieve the item at the specified index from the container
   index :: s -> i -> a

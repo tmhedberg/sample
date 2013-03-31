@@ -1,4 +1,7 @@
-{-# LANGUAGE FlexibleInstances, FunctionalDependencies, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances
+           , FunctionalDependencies
+           , GeneralizedNewtypeDeriving
+           #-}
 
 -- | Polymorphic random sampling of containers
 module Data.Sample where
@@ -24,9 +27,16 @@ class (Num i, Random i) => Sample s i a | s -> i a where
   -- | Sample a container, using the provided RandomGem instance as the entropy
   -- source
   sample :: RandomGen rg => rg -> s -> (a, rg)
-  sample rg s = let bi = baseIndex (undefined :: s)
-                    (i, rg') = randomR (bi, bi + size s - 1) rg
-                in (s `index` i, rg')
+  sample rg s = defaultSample rg s baseIndex
+    where
+      defaultSample :: (RandomGen rg, Sample s i a)
+                    => rg
+                    -> s
+                    -> BaseIndex s i
+                    -> (a, rg)
+      defaultSample rg' s' (BaseIndex bi) =
+        let (i, rg'') = randomR (bi, bi + size s' - 1) rg'
+        in (s' `index` i, rg'')
 
   -- | Sample a container, using I/O to retrieve the system's global entropy
   -- source
@@ -39,14 +49,14 @@ class (Num i, Random i) => Sample s i a | s -> i a where
   -- | The index of the first element in the container
   --
   -- Default: @0@
-  --
-  -- The argument is unused and may be 'undefined'; it is required for
-  -- unambiguous instance resolution.
-  baseIndex :: s -> i
-  baseIndex _ = 0
+  baseIndex :: BaseIndex s i
+  baseIndex = 0
 
   -- | Return the number of elements in the given container
   size :: s -> i
+
+-- | Phantom wrapper for unambiguous instance resolution
+newtype BaseIndex s i = BaseIndex i deriving Num
 
 instance Sample (Set a) Int a where index = flip elemAt
                                     size = S.size

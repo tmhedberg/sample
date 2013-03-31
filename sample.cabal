@@ -19,3 +19,4 @@ library
     random ==1.0.*,
     transformers ==0.3.*
   hs-source-dirs: src
+  ghc-options: -Wall

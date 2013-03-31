@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances, FunctionalDependencies #-}
 
+-- | Polymorphic random sampling of containers
 module Data.Sample where
 
 import Control.Monad.IO.Class
@@ -12,6 +13,12 @@ import qualified Data.Set as S
 
 import System.Random
 
+-- | The class of container types which can be randomly sampled
+--
+-- The default instance for 'Map' samples the keys of the map; to sample values
+-- instead, wrap the 'Map' in a 'ValMap'.
+--
+-- Minimal complete definition: 'index' and 'size'
 class Sample s a | s -> a where
   sample :: RandomGen rg => rg -> s -> (a, rg)
   sample rg s = let (i, rg') = randomR (0, size s - 1) rg in (s `index` i, rg')
@@ -29,6 +36,8 @@ instance Sample [a] a where index = (!!)
 instance Sample (Map k v) k where index = flip elemAt . keysSet
                                   size = M.size
 
+-- | Wrapper for 'Map' for which the 'Sample' instance samples values instead of
+-- keys
 newtype ValMap k v = ValMap (Map k v)
 
 instance Sample (ValMap k v) v where index (ValMap m) = (elems m !!)

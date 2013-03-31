@@ -20,11 +20,23 @@ import System.Random
 --
 -- Minimal complete definition: 'index' and 'size'
 class Sample s a | s -> a where
+
+  -- | Sample a container, using the provided RandomGem instance as the entropy
+  -- source
   sample :: RandomGen rg => rg -> s -> (a, rg)
   sample rg s = let (i, rg') = randomR (0, size s - 1) rg in (s `index` i, rg')
+
+  -- | Sample a container, using I/O to retrieve the system's global entropy
+  -- source
   sampleIO :: MonadIO io => s -> io a
   sampleIO s = liftIO $ (s`index`) <$> randomRIO (0, size s - 1)
+
+  -- | Retrieve the item at the specified index from the container
+  --
+  -- Indexing is assumed to begin at 0.
   index :: s -> Int -> a
+
+  -- | Return the number of elements in the container
   size :: s -> Int
 
 instance Sample (Set a) a where index = flip elemAt
